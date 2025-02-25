@@ -20,7 +20,7 @@ cloudinary.config({
 const storage = new CloudinaryStorage({
     cloudinary,
     params: {
-        folder: "products", // اسم المجلد داخل Cloudinary
+        folder: "products",
         allowed_formats: ["jpg", "png", "jpeg"],
     },
 });
@@ -53,12 +53,10 @@ router.post("/", upload.single("image"), async (req, res) => {
 router.get("/", async (req, res) => {
     try {
         let { limit, page } = req.query;
+        limit = parseInt(limit) || 10;
+        page = parseInt(page) || 1;
 
-        // تحويل القيم إلى أرقام مع تحديد القيم الافتراضية
-        limit = parseInt(limit) || 10; // عدد المنتجات في كل طلب (افتراضي 10)
-        page = parseInt(page) || 1; // الصفحة المطلوبة (افتراضي 1)
-
-        const skip = (page - 1) * limit; // لحساب عدد المنتجات التي سيتم تخطيها
+        const skip = (page - 1) * limit;
 
         const products = await Product.find().skip(skip).limit(limit);
         const totalProducts = await Product.countDocuments();
@@ -87,7 +85,7 @@ router.get("/:id", async (req, res) => {
     }
 });
 
-// ✅ [DELETE] حذف منتج من قاعدة البيانات
+// ✅ [DELETE] حذف منتج
 router.delete("/:id", async (req, res) => {
     try {
         const product = await Product.findByIdAndDelete(req.params.id);
@@ -100,19 +98,19 @@ router.delete("/:id", async (req, res) => {
     }
 });
 
-// ✅ [PUT] تحديث بيانات المنتج
+// ✅ [PUT] تحديث المنتج
 router.put("/:id", async (req, res) => {
     try {
+        const { title, price, desc } = req.body;
         const { id } = req.params;
-        const { title, price } = req.body;
 
-        if (!title || !price) {
+        if (!title || !price || !desc) {
             return res.status(400).json({ message: "❌ يرجى إدخال جميع البيانات المطلوبة!" });
         }
 
         const updatedProduct = await Product.findByIdAndUpdate(
             id,
-            { title, price },
+            { title, price, desc },
             { new: true, runValidators: true }
         );
 
