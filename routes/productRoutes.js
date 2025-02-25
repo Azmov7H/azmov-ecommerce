@@ -1,19 +1,29 @@
 import express from "express";
 import multer from "multer";
+import { v2 as cloudinary } from "cloudinary";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
 import Product from "../models/Product.js";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const router = express.Router();
 
-// إعداد Multer لحفظ الصور
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, "uploads/");
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + "-" + file.originalname);
-    }
+// إعدادات Cloudinary
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+// إعداد Multer لتخزين الصور في Cloudinary
+const storage = new CloudinaryStorage({
+    cloudinary,
+    params: {
+        folder: "products", // اسم المجلد داخل Cloudinary
+        allowed_formats: ["jpg", "png", "jpeg"],
+    },
+});
 const upload = multer({ storage });
 
 // ✅ [POST] إضافة منتج جديد
@@ -63,6 +73,7 @@ router.get("/", async (req, res) => {
         res.status(500).json({ message: "❌ حدث خطأ أثناء جلب المنتجات!", error });
     }
 });
+
 // ✅ [GET] جلب منتج واحد
 router.get("/:id", async (req, res) => {
     try {
@@ -75,7 +86,8 @@ router.get("/:id", async (req, res) => {
         res.status(500).json({ message: "❌ حدث خطأ أثناء جلب المنتج!", error });
     }
 });
-//✅حذف منتج من قاعدة البيانات
+
+// ✅ [DELETE] حذف منتج من قاعدة البيانات
 router.delete("/:id", async (req, res) => {
     try {
         const product = await Product.findByIdAndDelete(req.params.id);
@@ -88,18 +100,16 @@ router.delete("/:id", async (req, res) => {
     }
 });
 
-// ✅ تحديث بيانات المنتج
+// ✅ [PUT] تحديث بيانات المنتج
 router.put("/:id", async (req, res) => {
     try {
         const { id } = req.params;
         const { title, price } = req.body;
 
-        // التأكد من إرسال بيانات صحيحة
         if (!title || !price) {
             return res.status(400).json({ message: "❌ يرجى إدخال جميع البيانات المطلوبة!" });
         }
 
-        // البحث عن المنتج وتحديثه
         const updatedProduct = await Product.findByIdAndUpdate(
             id,
             { title, price },
@@ -116,8 +126,5 @@ router.put("/:id", async (req, res) => {
         res.status(500).json({ message: "❌ خطأ في الخادم الداخلي!" });
     }
 });
-
-
-
 
 export default router;
