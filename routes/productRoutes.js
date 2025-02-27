@@ -101,16 +101,16 @@ router.delete("/:id", async (req, res) => {
 // ✅ [PUT] تحديث المنتج
 router.put("/:id", async (req, res) => {
     try {
-        const { title, price, desc } = req.body;
+        const { title, price } = req.body;
         const { id } = req.params;
 
-        if (!title || !price || !desc) {
+        if (!title || !price) {
             return res.status(400).json({ message: "❌ يرجى إدخال جميع البيانات المطلوبة!" });
         }
 
         const updatedProduct = await Product.findByIdAndUpdate(
             id,
-            { title, price, desc },
+            { title, price },
             { new: true, runValidators: true }
         );
 
